@@ -141,16 +141,18 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
         var lng = 0
 
         while (index < len) {
-            // Decode latitude
             var b: Int
             var shift = 0
             var result = 0
+
+            // Decode latitude
             do {
                 b = encoded[index++].code - 63
                 result = result or ((b and 0x1f) shl shift)
                 shift += 5
             } while (b >= 0x20)
-            val dlat = if (result and 1 != 0) result shr 1 else -(result shr 1)
+
+            val dlat = if (result and 1 != 0) -(result shr 1) else (result shr 1)
             lat += dlat
 
             // Decode longitude
@@ -161,20 +163,21 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
                 result = result or ((b and 0x1f) shl shift)
                 shift += 5
             } while (b >= 0x20)
-            val dlng = if (result and 1 != 0) result shr 1 else -(result shr 1)
+
+            val dlng = if (result and 1 != 0) -(result shr 1) else (result shr 1)
             lng += dlng
 
-            // Convert to LatLng and add to list
-            val p = LatLng(
-                (lat / 1E5).toDouble(),
-                (lng / 1E5).toDouble()
+            val point = LatLng(
+                lat.toDouble() / 1E5,
+                lng.toDouble() / 1E5
             )
-            Log.d("Decoded LatLng", "LatLng: ${p.latitude}, ${p.longitude}")
-            poly.add(p)
+            poly.add(point)
         }
 
         return poly
     }
+
+
 
 
 
