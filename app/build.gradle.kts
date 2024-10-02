@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.google.maps)
     implementation(libs.google.location)
+    implementation(libs.google.maps)
+    implementation(libs.compose.material3)
     implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")

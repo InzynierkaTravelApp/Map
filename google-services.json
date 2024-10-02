@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1018793075304",
+    "project_id": "inzynierka-b1297",
+    "storage_bucket": "inzynierka-b1297.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018793075304:android:d8d3d77bef88f3520a51dd",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvyN4AxB4kc_d7RGHjaeMTuLtblPH_Zcw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
