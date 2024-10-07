@@ -10,6 +10,7 @@ interface DirectionsApiService {
     fun getDirections(
         @Query("origin") origin: String,
         @Query("destination") destination: String,
+        @Query("waypoints") waypoints: String?,
         @Query("key") apiKey: String
     ): Call<DirectionsResponse>
 }

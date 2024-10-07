@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.myapplication.ui.theme.MapScreen
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.RetrofitInstance
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -29,13 +30,12 @@ import retrofit2.Response
 
 class MainActivity : ComponentActivity(), OnMapReadyCallback {
 
-    private val apiKey = "AIzaSyBcWOts8IFU79FQNhPXsptKGE5K0m4IQhE"
-
     private lateinit var mapView: MapView
     private lateinit var googleMap: GoogleMap
+    private val apiKey = "AIzaSyBcWOts8IFU79FQNhPXsptKGE5K0m4IQhE"
 
-    private var origin: LatLng? = null
-    private var destination: LatLng? = null
+    // Store all selected points
+    private var selectedPoints = mutableListOf<LatLng>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,18 +44,12 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
         mapView = MapView(this)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this) // Set up the map asynchronously
+
         setContent {
             MyApplicationTheme {
-                MapScreen(mapView)
+                MapScreen(mapView, ::onConfirmPoints) // Pass callback for confirming points
             }
         }
-    }
-
-    @Composable
-    fun MapScreen(mapView: MapView) {
-        AndroidView(factory = {
-            mapView
-        }, modifier = Modifier.fillMaxSize())
     }
 
     override fun onMapReady(map: GoogleMap) {
@@ -70,29 +64,34 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
     }
 
     private fun handleMapClick(latLng: LatLng) {
-        if (origin == null) {
-            origin = latLng
-            googleMap.addMarker(MarkerOptions().position(latLng).title("Origin"))
-        } else if (destination == null) {
-            destination = latLng
-            googleMap.addMarker(MarkerOptions().position(latLng).title("Destination"))
-            getDirections(origin!!, destination!!)
+        selectedPoints.add(latLng)
+        googleMap.addMarker(MarkerOptions().position(latLng).title("Point ${selectedPoints.size}"))
+    }
+
+    private fun onConfirmPoints() {
+        // Handle the confirmation of selected points
+        if (selectedPoints.size > 1) {
+            getDirections(selectedPoints)
         } else {
-            // Reset taps if both points are set
-            origin = latLng
-            destination = null
-            googleMap.clear()
-            googleMap.addMarker(MarkerOptions().position(latLng).title("Origin"))
+            Toast.makeText(this, "Please select at least two points.", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun getDirections(origin: LatLng, destination: LatLng) {
+    // Update getDirections to handle multiple points
+    private fun getDirections(points: List<LatLng>) {
+        val origin = points.first()
+        val destination = points.last()
+
+        val waypoints = points.subList(1, points.size - 1).joinToString("|") { "${it.latitude},${it.longitude}" }
+
         val originStr = "${origin.latitude},${origin.longitude}"
         val destinationStr = "${destination.latitude},${destination.longitude}"
 
+        // Call Directions API with waypoints
         val call = RetrofitInstance.directionsApiService.getDirections(
             originStr,
             destinationStr,
+            waypoints,
             apiKey
         )
         call.enqueue(object : Callback<DirectionsResponse> {
@@ -113,6 +112,44 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
             }
         })
     }
+    private fun decodePoly(encoded: String): List<LatLng> {
+        val poly = ArrayList<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+
+        while (index < len) {
+            var b: Int
+            var shift = 0
+            var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lat += dlat
+
+            shift = 0
+            result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lng += dlng
+
+            val latLng = LatLng(
+                lat / 1E5,
+                lng / 1E5
+            )
+            poly.add(latLng)
+        }
+
+        return poly
+    }
 
 
     private fun drawRouteOnMap(encodedPoints: String) {
@@ -131,85 +168,4 @@ class MainActivity : ComponentActivity(), OnMapReadyCallback {
         googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100))
     }
 
-
-
-    private fun decodePoly(encoded: String): List<LatLng> {
-        val poly = mutableListOf<LatLng>()
-        var index = 0
-        val len = encoded.length
-        var lat = 0
-        var lng = 0
-
-        while (index < len) {
-            var b: Int
-            var shift = 0
-            var result = 0
-
-            // Decode latitude
-            do {
-                b = encoded[index++].code - 63
-                result = result or ((b and 0x1f) shl shift)
-                shift += 5
-            } while (b >= 0x20)
-
-            val dlat = if (result and 1 != 0) -(result shr 1) else (result shr 1)
-            lat += dlat
-
-            // Decode longitude
-            shift = 0
-            result = 0
-            do {
-                b = encoded[index++].code - 63
-                result = result or ((b and 0x1f) shl shift)
-                shift += 5
-            } while (b >= 0x20)
-
-            val dlng = if (result and 1 != 0) -(result shr 1) else (result shr 1)
-            lng += dlng
-
-            val point = LatLng(
-                lat.toDouble() / 1E5,
-                lng.toDouble() / 1E5
-            )
-            poly.add(point)
-        }
-
-        return poly
-    }
-
-    override fun onResume() {
-        super.onResume()
-        mapView.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        mapView.onPause()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mapView.onDestroy()
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        mapView.onLowMemory()
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MyApplicationTheme {
-        Greeting("Android")
-    }
 }
