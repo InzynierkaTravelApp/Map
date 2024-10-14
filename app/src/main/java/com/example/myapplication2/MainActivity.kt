@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Initial map camera position
-        val initialLocation = LatLng(37.7749, -122.4194)  // San Francisco
+        val initialLocation = LatLng(54.35, 18.64)
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLocation, 10f))
     }
 
