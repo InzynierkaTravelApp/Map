@@ -60,12 +60,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLocation, 10f))
     }
 
-
     private fun drawRoute() {
         if (selectedPoints.size < 2) return
 
         // Optimize the selected points order
-        val optimizedPoints = optimizeRoute(selectedPoints)
+        val optimizedPoints = RouteOptimizer().optimizeRoute(selectedPoints)
 
         // Extract the origin, destination, and waypoints from optimized points
         val origin = optimizedPoints.first()
@@ -81,7 +80,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Build the Directions API URL
-        val url = buildDirectionsUrl(origin, destination, waypoints)
+        val url = DirectionsAPI().buildDirectionsUrl(origin, destination, waypoints)
 
         // Make the API request
         val request = Request.Builder().url(url).build()
@@ -110,7 +109,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         .getJSONObject("overview_polyline")
                         .getString("points")
                     runOnUiThread {
-                        googleMap.addPolyline(PolylineOptions().addAll(decodePolyline(polyline)))
+                        googleMap.addPolyline(PolylineOptions().addAll(DirectionsAPI().decodePolyline(polyline)))
                     }
                 } else {
                     runOnUiThread {
@@ -119,111 +118,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         })
-    }
-
-
-    private fun optimizeRoute(points: List<LatLng>): List<LatLng> {
-        if (points.isEmpty()) return emptyList()
-
-        val optimizedRoute = mutableListOf<LatLng>()
-        val unvisited = points.toMutableList()
-
-        // Start from the first point
-        var currentPoint = unvisited.removeAt(0)
-        optimizedRoute.add(currentPoint)
-
-        while (unvisited.isNotEmpty()) {
-            var nearestPoint: LatLng? = null
-            var nearestDistance = Double.MAX_VALUE
-
-            // Find the nearest unvisited point
-            for (point in unvisited) {
-                val distance = haversine(currentPoint, point)
-                if (distance < nearestDistance) {
-                    nearestDistance = distance
-                    nearestPoint = point
-                }
-            }
-
-            // Move to the nearest point
-            if (nearestPoint != null) {
-                optimizedRoute.add(nearestPoint)
-                unvisited.remove(nearestPoint)
-                currentPoint = nearestPoint
-            }
-        }
-
-        return optimizedRoute
-    }
-
-    // Haversine formula to calculate distance between two LatLng points
-    private fun haversine(point1: LatLng, point2: LatLng): Double {
-        val R = 6371e3 // Earth radius in meters
-        val lat1 = Math.toRadians(point1.latitude)
-        val lat2 = Math.toRadians(point2.latitude)
-        val deltaLat = Math.toRadians(point2.latitude - point1.latitude)
-        val deltaLng = Math.toRadians(point2.longitude - point1.longitude)
-
-        val a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-                Math.cos(lat1) * Math.cos(lat2) *
-                Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2)
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
-        return R * c // Distance in meters
-    }
-
-
-
-
-    private fun buildDirectionsUrl(
-        origin: LatLng,
-        destination: LatLng,
-        waypoints: List<LatLng>
-    ): String {
-        val apiKey = "AIzaSyBcWOts8IFU79FQNhPXsptKGE5K0m4IQhE"
-        val originParam = "origin=${origin.latitude},${origin.longitude}"
-        val destinationParam = "destination=${destination.latitude},${destination.longitude}"
-        val waypointsParam = if (waypoints.isNotEmpty()) {
-            "waypoints=" + waypoints.joinToString("|") { "${it.latitude},${it.longitude}" }
-        } else ""
-
-        return "https://maps.googleapis.com/maps/api/directions/json?$originParam&$destinationParam&$waypointsParam&key=$apiKey"
-    }
-
-    private fun decodePolyline(encoded: String): List<LatLng> {
-        val poly = ArrayList<LatLng>()
-        var index = 0
-        val len = encoded.length
-        var lat = 0
-        var lng = 0
-
-        while (index < len) {
-            var b: Int
-            var shift = 0
-            var result = 0
-            do {
-                b = encoded[index++].code - 63
-                result = result or (b and 0x1f shl shift)
-                shift += 5
-            } while (b >= 0x20)
-            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
-            lat += dlat
-
-            shift = 0
-            result = 0
-            do {
-                b = encoded[index++].code - 63
-                result = result or (b and 0x1f shl shift)
-                shift += 5
-            } while (b >= 0x20)
-            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
-            lng += dlng
-
-            val latLng = LatLng(lat.toDouble() / 1E5, lng.toDouble() / 1E5)
-            poly.add(latLng)
-        }
-
-        return poly
     }
 
     // Override lifecycle methods for MapView
