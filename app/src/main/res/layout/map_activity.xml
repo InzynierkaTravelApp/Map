@@ -15,4 +15,13 @@
         android:text="Confirm"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="16dp"/>
+
+    <Button
+        android:id="@+id/btnBackToMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Back to Menu"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="60dp"/>
+
 </FrameLayout>

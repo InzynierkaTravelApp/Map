@@ -3,9 +3,10 @@
     package="com.example.myapplication2"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET" /> <!-- Add this permission -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -15,12 +16,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication2">
 
+        <!-- API Key for Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBcWOts8IFU79FQNhPXsptKGE5K0m4IQhE" />
 
+        <!-- MainScreenActivity is the launcher activity -->
         <activity
-            android:name=".MainActivity"
+            android:name=".MainScreenActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.MyApplication2">
@@ -29,5 +32,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- MainActivity for the map functionality -->
+        <activity
+            android:name=".MapActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MyApplication2" />
+
     </application>
 </manifest>

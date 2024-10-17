@@ -16,17 +16,18 @@ import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mapView: MapView
     private lateinit var googleMap: GoogleMap
     private lateinit var btnConfirm: Button
+    private lateinit var btnBackToMenu: Button
     private val selectedPoints = mutableListOf<LatLng>()
     private val client = OkHttpClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.map_activity)
 
         // Initialize the map
         mapView = findViewById(R.id.mapView)
@@ -35,12 +36,16 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Initialize the confirm button
         btnConfirm = findViewById(R.id.btnConfirm) // Initialize btnConfirm
+        btnBackToMenu = findViewById(R.id.btnBackToMenu)
 
         // Handle confirm button click
         btnConfirm.setOnClickListener {
             if (selectedPoints.size > 1) {
                 drawRoute()
             }
+        }
+        btnBackToMenu.setOnClickListener {
+            finish() // Closes MainActivity and returns to the previous activity (MainScreenActivity)
         }
     }
 
@@ -87,7 +92,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Failed to fetch directions.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MapActivity, "Failed to fetch directions.", Toast.LENGTH_SHORT).show()
                     e.printStackTrace()
                 }
             }
@@ -95,7 +100,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             override fun onResponse(call: Call, response: Response) {
                 if (!response.isSuccessful) {
                     runOnUiThread {
-                        Toast.makeText(this@MainActivity, "Error fetching directions: ${response.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MapActivity, "Error fetching directions: ${response.message}", Toast.LENGTH_SHORT).show()
                     }
                     return
                 }
@@ -113,7 +118,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                 } else {
                     runOnUiThread {
-                        Toast.makeText(this@MainActivity, "No routes found.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MapActivity, "No routes found.", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
